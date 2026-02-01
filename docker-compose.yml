@@ -1,0 +1,11 @@
+version: "3.9"
+
+services:
+  app:
+    build: .
+    container_name: phonebook_cli
+    volumes:
+      - .:/app
+      - ./data:/app/data
+    stdin_open: true
+    tty: true

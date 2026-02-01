@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "phone-book-cli"
+version = "0.1.0"
+description = "Professional CLI phone book application with modular architecture, validation, logging and Docker."
+authors = ["Oleksandra Lesya <oleksandralesyazin@gmail.com>"]
+package-mode = false
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.2.0"
+pytest-cov = "^5.0.0"
+
+[build-system]
+requires = ["poetry-core>=1.9.0"]
+build-backend = "poetry.core.masonry.api"

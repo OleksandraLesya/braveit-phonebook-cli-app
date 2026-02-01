@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+
+# Pytest / Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDE
+.vscode/
+.idea/
+
+# Data & Logs
+data/*.json
+data/*.csv
+data/*.log
+*.log
+
+# Poetry
+dist/
+.history/
+
+# Docker
+*.pid
+*.sock
