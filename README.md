@@ -63,26 +63,26 @@ q. Exit
 ## Run Locally (Poetry)
 
 1️⃣ Install dependencies
-poetry install
+`poetry install`
 
 2️⃣ Run the application
-poetry run python main.py
+`poetry run python main.py`
 
 3️⃣ Run tests
-poetry run pytest
+`poetry run pytest`
 
 ---
 
 ## Run with Docker
 
 1️⃣ Build the image
-docker compose build
+`docker compose build`
 
 2️⃣ Run the CLI application
-docker compose run app
+`docker compose run app`
 
 3️⃣ Run tests inside Docker
-docker compose run app pytest
+`docker compose run app pytest`
 
 ---
 
