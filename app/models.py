@@ -1,54 +1,56 @@
-# appmodels.py
-
+# app/models.py
 """
-Моделі даних для застосунку Phone Book CLI.
-
-Цей модуль відповідає за:
-- створення сутностей контактів
-- генерацію унікальних ідентифікаторів (ID)
-- нормалізацію та валідацію необроблених вхідних даних
-
-Модель контакту представлена у вигляді словника, щоб проект
-залишався легким і зрозумілим для початківців.
+Моделі даних для Phone Book CLI.
 """
 
-import uuid
-from datetime import datetime
-from typing import Dict
+from uuid import uuid4
+from datetime import datetime, UTC
 
 
-def generate_id() -> str:
+class Contact:
     """
-    Генерує унікальний UUID для контакту.
-
-    :return: рядок UUID
+    Клас, що представляє контакт телефонної книги.
     """
-    return str(uuid.uuid4())
 
+    def __init__(
+        self,
+        first_name: str,
+        last_name: str,
+        phones: dict,
+        city: str = "",
+        job: str = "",
+        contact_id: str | None = None,
+        created_at: str | None = None,
+    ):
+        self.id = contact_id or str(uuid4())
+        self.first_name = first_name.capitalize()
+        self.last_name = last_name.capitalize()
+        self.phones = phones
+        self.city = city.capitalize() if city else ""
+        self.job = job.capitalize() if job else ""
+        self.created_at = created_at or datetime.now(UTC).isoformat()
 
-def create_contact(
-    first_name: str,
-    last_name: str,
-    phones: Dict[str, str],
-    city: str = "",
-    job: str = ""
-) -> dict:
-    """
-    Створює новий контакт телефонної книги.
+    def to_dict(self) -> dict:
+        """Перетворює Contact у словник (для JSON / CSV)."""
+        return {
+            "id": self.id,
+            "first_name": self.first_name,
+            "last_name": self.last_name,
+            "phones": self.phones,
+            "city": self.city,
+            "job": self.job,
+            "created_at": self.created_at,
+        }
 
-    :param first_name: ім'я
-    :param last_name: прізвище
-    :param phones: словник телефонів (mobile, home тощо)
-    :param city: місто
-    :param job: професія
-    :return: словник контакту
-    """
-    return {
-        "id": generate_id(),
-        "first_name": first_name.strip().capitalize(),
-        "last_name": last_name.strip().capitalize(),
-        "phones": phones,
-        "city": city.strip().capitalize(),
-        "job": job.strip().capitalize(),
-        "created_at": datetime.now().isoformat()
-    }
+    @classmethod
+    def from_dict(cls, data: dict) -> "Contact":
+        """Створює Contact зі словника."""
+        return cls(
+            first_name=data.get("first_name", ""),
+            last_name=data.get("last_name", ""),
+            phones=data.get("phones", {}),
+            city=data.get("city", ""),
+            job=data.get("job", ""),
+            contact_id=data.get("id"),
+            created_at=data.get("created_at"),
+        )

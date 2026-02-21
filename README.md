@@ -1,44 +1,68 @@
-# Phone Book CLI Application (Python)
+# Phone Book CLI Application (OOP)
 
-A **Command Line Interface (CLI)** application for managing a phone book.  
-Built with a **modular architecture**, **validated business logic**, **logging**, **automated tests**, 
-and fully containerized using **Docker**.
+A **Command Line Interface (CLI)** application for managing a phone book.
+
+The project was originally implemented in a procedural style and later refactored 
+to an **Object-Oriented architecture** with a clear separation of concerns, with repository abstraction and constructor-based dependency injection.
+
+Built with validated business logic, logging, automated tests, and fully containerized using Docker.
 
 ---
 
 ## Features
 
+- ## Features
+
 - Add, update, and delete contacts
 - Case-insensitive & fuzzy search (by name or phone number)
 - UUID-based unique contact identifiers
 - JSON file storage with error handling
-- Automatic saving after changes
-- Backup support before destructive operations
+- Automatic timestamped backups before overwriting data
+- Repository pattern for storage abstraction
+- Constructor-based dependency injection
+- Automatic persistence after changes
 - Import contacts from CSV
 - Export contacts to CSV
-- Logging instead of print statements
+- Structured logging instead of print statements
 - Fully tested with pytest
 - Dependency management with Poetry
 - Docker & Docker Compose support
 
 ---
 
+## Architecture Overview
+
+The application follows a layered structure:
+
+- **Contact (models.py)** — domain model
+- **PhoneBook (api.py)** — business logic layer
+- **ContactRepository (repository.py)** — storage abstraction
+- **JSONStorage (storage.py)** — file-based implementation
+- **CLI (cli.py)** — user interaction layer
+- **Logger (logger.py)** — centralized logging
+- **Utils (utils.py)** — validation & formatting helpers
+
+This separation improves testability, flexibility, and maintainability.
+
+---
+
 ## Project Structure
 
 ├── app/
-│   ├── api.py        # Business logic
-│   ├── cli.py        # CLI interface
-│   ├── models.py     # Data models
-│   ├── storage.py    # File storage (JSON, CSV, backups)
-│   ├── utils.py      # Helpers & validation
-│   └── logger.py     # Logging configuration
-├── tests/            # Pytest test suite
-├── data/             # JSON data, logs, backups
+│   ├── api.py          # PhoneBook business logic
+│   ├── cli.py          # CLI interface
+│   ├── models.py       # Contact domain model
+│   ├── repository.py   # Repository abstraction
+│   ├── storage.py      # JSON/CSV storage & backups
+│   ├── utils.py        # Helpers & validation
+│   └── logger.py       # Logging configuration
+├── tests/              # Pytest test suite
+├── data/               # JSON data, logs, backups
 ├── Dockerfile
 ├── docker-compose.yml
 ├── pyproject.toml
 ├── poetry.lock
-├── main.py           # Application entry point
+├── main.py             # Application entry point
 └── README.md
 
 ---
@@ -49,6 +73,7 @@ The application provides a simple and user-friendly CLI menu:
 
 📞 PHONE BOOK MENU
 1. Show all contacts
+2. Add contacts
 3. Search by last name
 4. Search by phone number
 5. Delete contact
@@ -63,26 +88,26 @@ q. Exit
 ## Run Locally (Poetry)
 
 1️⃣ Install dependencies
-poetry install
+`poetry install`
 
 2️⃣ Run the application
-poetry run python main.py
+`poetry run python main.py`
 
 3️⃣ Run tests
-poetry run pytest
+`poetry run pytest`
 
 ---
 
 ## Run with Docker
 
 1️⃣ Build the image
-docker compose build
+`docker compose build`
 
 2️⃣ Run the CLI application
-docker compose run app
+`docker compose run app`
 
 3️⃣ Run tests inside Docker
-docker compose run app pytest
+`docker compose run app pytest`
 
 ---
 
@@ -91,9 +116,9 @@ docker compose run app pytest
 Testing framework: pytest
 
 Covered layers:
-- models — contact creation and ID generation
+- models — contact creation and ID handling
 - api — business logic (add, search, delete, update)
-- storage — JSON/CSV persistence and backups
+- storage — JSON repository implementation with backup support
 - utils — validation and formatting helpers
 
 CLI and entry point (main.py) are intentionally not tested.
@@ -111,11 +136,18 @@ data/phonebook.log
 
 ## Technologies Used
 
-Python 3.10+
-Poetry
-Pytest
-Docker & Docker Compose
-JSON / CSV
-UUID
-Logging
+- Python 3.10+
+- Poetry
+- Pytest
+- Docker & Docker Compose
+- JSON / CSV
+- UUID
+- Logging
 
+## Design Principles
+
+- Separation of Concerns
+- Repository Pattern
+- Dependency Injection
+- Layered Architecture
+- Test Isolation via FakeRepository

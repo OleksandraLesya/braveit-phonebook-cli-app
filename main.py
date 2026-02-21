@@ -1,8 +1,6 @@
 # main.py
-"""
-Точка входу в застосунок Phone Book CLI.
-"""
-from app.cli import run
+
+from app.cli import PhoneBookCLI
 
 if __name__ == "__main__":
-    run()
+    PhoneBookCLI().run()

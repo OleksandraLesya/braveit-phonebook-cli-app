@@ -1,113 +1,71 @@
-# app/api.py
+# app/api.py (Dependency Injection)
 
 """
-Бізнес-логіка (API) для застосунку Phone Book CLI.
-
-Цей модуль надає чисті функції для:
-- додавання, видалення, оновлення контактів
-- пошуку контактів (включаючи нечіткий пошук)
-- тут заборонено використовувати calls input() або print()
+Business logic layer for the Phone Book application.
 """
 
-from typing import List, Optional
 from difflib import get_close_matches
+from app.models import Contact
+from app.repository import ContactRepository
 from app.logger import logger
 
 
-def find_contact_by_id(phonebook: List[dict], contact_id: str) -> Optional[dict]:
+class PhoneBook:
     """
-    Шукає контакт у телефонній книзі за його унікальним ID.
-
-    :param phonebook: список контактів
-    :param contact_id: ID контакту
-    :return: словник контакту або None, якщо не знайдено
+    Core business logic for managing contacts.
     """
-    return next((c for c in phonebook if c["id"] == contact_id), None)
 
+    def __init__(self, repository: ContactRepository):
+        """
+        Initialize PhoneBook with injected repository.
+        """
+        self.repository = repository
+        self.contacts = repository.get_all()
 
-def add_contact(phonebook: List[dict], contact: dict) -> bool:
-    """
-    Додає новий контакт до телефонної книги.
+    def _commit(self):
+        """Persist current state to repository."""
+        self.repository.save_all(self.contacts)
 
-    :param phonebook: список контактів
-    :param contact: словник нового контакту
-    :return: False, якщо контакт з таким ID вже існує, інакше True
-    """
-    if find_contact_by_id(phonebook, contact["id"]):
-        logger.warning("Контакт з таким ID вже існує.")
-        return False
+    def add_contact(self, contact: Contact) -> bool:
+        if any(c.id == contact.id for c in self.contacts):
+            logger.warning("Contact with this ID already exists.")
+            return False
 
-    phonebook.append(contact)
-    logger.info(
-        "Контакт додано: %s %s",
-        contact.get("first_name"),
-        contact.get("last_name"),
-    )
-    return True
+        self.contacts.append(contact)
+        self._commit()
+        return True
 
+    def find_by_id(self, contact_id: str) -> Contact | None:
+        return next((c for c in self.contacts if c.id == contact_id), None)
 
-def delete_contact(phonebook: List[dict], contact_id: str) -> bool:
-    """
-    Видаляє контакт за його унікальним ID.
+    def delete_contact(self, contact_id: str) -> bool:
+        contact = self.find_by_id(contact_id)
+        if not contact:
+            return False
 
-    :param phonebook: список контактів
-    :param contact_id: ID контакту для видалення
-    :return: True, якщо видалено успішно, False, якщо не знайдено
-    """
-    contact = find_contact_by_id(phonebook, contact_id)
+        self.contacts.remove(contact)
+        self._commit()
+        return True
 
-    if not contact:
-        logger.warning("Контакт не знайдено для видалення.")
-        return False
+    def update_contact(self, contact_id: str, updates: dict) -> bool:
+        contact = self.find_by_id(contact_id)
+        if not contact:
+            return False
 
-    phonebook.remove(contact)
-    logger.info("Контакт видалено: %s", contact_id)
-    return True
+        for key, value in updates.items():
+            if hasattr(contact, key):
+                setattr(contact, key, value)
 
+        self._commit()
+        return True
 
-def update_contact(phonebook: List[dict], contact_id: str, updates: dict) -> bool:
-    """
-    Оновлює поля існуючого контакту за його ID.
+    def search_by_lastname(self, query: str) -> list[Contact]:
+        lastnames = [c.last_name for c in self.contacts]
+        matches = get_close_matches(query.capitalize(), lastnames, cutoff=0.6)
+        return [c for c in self.contacts if c.last_name in matches]
 
-    :param phonebook: список контактів
-    :param contact_id: ID контакту для оновлення
-    :param updates: словник з новими даними
-    :return: True, якщо оновлено успішно, інакше False
-    """
-    contact = find_contact_by_id(phonebook, contact_id)
-
-    if not contact:
-        logger.warning("Контакт не знайдено для оновлення.")
-        return False
-
-    contact.update(updates)
-    logger.info("Контакт оновлено: %s", contact_id)
-    return True
-
-
-def search_by_lastname(phonebook: List[dict], query: str) -> List[dict]:
-    """
-    Виконує нечіткий (fuzzy) пошук контактів за прізвищем.
-
-    :param phonebook: список контактів
-    :param query: запит (прізвище)
-    :return: список знайдених контактів
-    """
-    lastnames = [c.get("last_name", "") for c in phonebook]
-    matches = get_close_matches(query.capitalize(), lastnames, cutoff=0.6)
-
-    return [c for c in phonebook if c.get("last_name") in matches]
-
-
-def search_by_phone(phonebook: List[dict], query: str) -> List[dict]:
-    """
-    Шукає контакти за входженням номера телефону (підрядок).
-
-    :param phonebook: список контактів
-    :param query: частина номера телефону
-    :return: список знайдених контактів
-    """
-    return [
-        c for c in phonebook
-        if any(query in str(number) for number in c.get("phones", {}).values())
-    ]
+    def search_by_phone(self, query: str) -> list[Contact]:
+        return [
+            c for c in self.contacts
+            if any(query in str(p) for p in c.phones.values())
+        ]
