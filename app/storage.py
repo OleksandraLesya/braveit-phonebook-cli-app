@@ -1,63 +1,76 @@
-# app/storage.py
-
 """
-Шар збереження даних для застосунку Phone Book CLI.
-
-Цей модуль керує:
-- завантаженням даних телефонної книги з JSON
-- збереженням даних телефонної книги в JSON
-- створенням резервних копій (backup) телефонної книги
-
-Він не містить бізнес-логіки.
+Persistence layer for saving and loading contacts using JSON.
+Provides automated backup functionality before data modifications.
 """
 
 import json
 import os
 import shutil
-from typing import List
-from app.logger import logger
+from datetime import datetime
+from app.models import Contact
+from app.repository import ContactRepository
 
 
-def load_phonebook(filename: str) -> List[dict]:
+class JSONStorage(ContactRepository):
     """
-    Завантажує телефонну книгу з JSON-файлу.
+    JSON-based implementation of ContactRepository with automated safety backups.
     """
-    if not os.path.exists(filename):
-        logger.warning("Файл не знайдено. Створюється нова телефонна книга.")
-        return []
 
-    try:
-        with open(filename, "r", encoding="utf-8") as file:
-            content = file.read().strip()
-            if not content:
-                logger.warning("JSON файл порожній. Використовується порожня книга.")
-                return []
-            return json.loads(content)
+    def __init__(self, filepath: str):
+        """
+        Initialize storage with a specific file path.
+        
+        Args:
+            filepath (str): Path to the JSON storage file.
+        """
+        self.filepath = filepath
 
-    except json.JSONDecodeError:
-        logger.error("JSON файл пошкоджений. Використовується порожня книга.")
-        return []
+    def _create_backup(self) -> None:
+        """
+        Creates a timestamped backup of the current data file if it exists and is not empty.
+        Example: phonebook.json -> phonebook.json.20260221_153000.bak
+        """
+        if os.path.exists(self.filepath) and os.path.getsize(self.filepath) > 0:
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            backup_path = f"{self.filepath}.{timestamp}.bak"
+            shutil.copy2(self.filepath, backup_path)
 
+    def get_all(self) -> list[Contact]:
+        """
+        Load all contacts from the JSON file.
+        
+        Returns:
+            list[Contact]: A list of Contact objects or an empty list if file error occurs.
+        """
+        if not os.path.exists(self.filepath):
+            return []
 
-def save_phonebook(filename: str, phonebook: List[dict]) -> None:
-    """
-    Зберігає телефонну книгу у JSON-файл.
-
-    :param filename: шлях до файлу
-    :param phonebook: список контактів
-    """
-    with open(filename, "w", encoding="utf-8") as file:
-        json.dump(phonebook, file, indent=4, ensure_ascii=False)
-    logger.info("Телефонну книгу збережено.")
-
-
-def backup_phonebook(src: str, backup: str) -> None:
-    """
-    Створює резервну копію телефонної книги за допомогою shutil.
-    """
-    if os.path.exists(src):
         try:
-            shutil.copy2(src, backup)
-            logger.info("Backup створено: %s", backup)
-        except Exception as e:
-            logger.error("Помилка при створенні backup: %s", e)
+            if os.path.getsize(self.filepath) == 0:
+                return []
+
+            with open(self.filepath, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                return [Contact.from_dict(item) for item in data]
+
+        except (json.JSONDecodeError, OSError):
+            return []
+
+    def save_all(self, contacts: list[Contact]) -> None:
+        """
+        Persist contacts to a JSON file. 
+        Creates a backup before saving, provided the contact list is not empty.
+        
+        Args:
+            contacts (list[Contact]): The list of contacts to save.
+        """
+        if contacts:
+            self._create_backup()
+
+        with open(self.filepath, "w", encoding="utf-8") as f:
+            json.dump(
+                [c.to_dict() for c in contacts],
+                f,
+                ensure_ascii=False,
+                indent=2,
+            )
